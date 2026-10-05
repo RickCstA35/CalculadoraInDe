@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Calculadora de Cálculo</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/nerdamer/1.1.13/nerdamer.core.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/nerdamer/1.1.13/Algebra.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/nerdamer/1.1.13/Calculus.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3@3/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/function-plot@1.23.0/dist/function-plot.js"></script>
+<style>
+:root{
+  --bg:#fbf6ee;--surface:#fff;--soft:#f7f0e4;--border:#eadfcb;--text:#3b3631;--muted:#8a7d6f;
+  --primary:#e8741a;--primary-d:#c9600f;--blue:#2f7fd1;--green:#2e9e6b;--err-bg:#fdecea;--err:#c0392b;
+  --shadow:0 12px 32px rgba(120,80,30,.10);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#17140f;--surface:#211d17;--soft:#2a251d;--border:#3a3328;--text:#efe8dc;--muted:#a3957f;
+  --err-bg:#3a1f1c;--err:#ff8a7a;--shadow:0 12px 32px rgba(0,0,0,.4);}}
+:root[data-theme="dark"]{
+  --bg:#17140f;--surface:#211d17;--soft:#2a251d;--border:#3a3328;--text:#efe8dc;--muted:#a3957f;
+  --err-bg:#3a1f1c;--err:#ff8a7a;--shadow:0 12px 32px rgba(0,0,0,.4);}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,'Segoe UI',sans-serif;min-height:100vh;padding:1.5rem 1rem 3rem;
+  background-image:radial-gradient(circle at 12% -10%,rgba(232,116,26,.14),transparent 45%),radial-gradient(circle at 100% 0,rgba(47,127,209,.10),transparent 40%)}
+header{max-width:1080px;margin:0 auto 1.5rem;display:flex;justify-content:space-between;align-items:center;gap:1rem}
+.brand{display:flex;align-items:center;gap:.75rem}
+.logo{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,var(--primary),#f5a623);color:#fff;display:grid;place-items:center;font-weight:700;font-size:1.3rem;box-shadow:0 6px 14px rgba(232,116,26,.35)}
+h1{font-size:1.35rem;font-weight:700}
+.sub{font-size:.85rem;color:var(--muted)}
+.icon-btn{border:1px solid var(--border);background:var(--surface);color:var(--text);width:40px;height:40px;border-radius:12px;cursor:pointer;font-size:1.1rem}
+.layout{max-width:1080px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:1.5rem;align-items:start}
+@media(max-width:860px){.layout{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow);padding:1.5rem}
+h2{font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:1.4rem 0 .6rem;font-weight:600}
+h2:first-child{margin-top:0}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);background:var(--soft);padding:4px;border-radius:14px;gap:4px}
+.tab{border:0;background:transparent;color:var(--muted);padding:.7rem .4rem;border-radius:10px;font:600 .88rem 'Inter',sans-serif;cursor:pointer;transition:.2s}
+.tab.active{background:var(--surface);color:var(--primary);box-shadow:0 2px 8px rgba(0,0,0,.08)}
+input[type=text],input[type=number]{width:100%;padding:.85rem 1rem;border:2px solid var(--border);border-radius:12px;background:var(--surface);color:var(--text);font:500 1.05rem 'JetBrains Mono',ui-monospace,monospace;outline:none;transition:.2s}
+input:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(232,116,26,.14)}
+.limits{display:none;gap:.8rem;margin-top:.8rem}
+.limits.show{display:flex}
+.limits label{font-size:.78rem;color:var(--muted);display:block;margin-bottom:.3rem}
+.chips{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.7rem}
+.chip{border:1px dashed var(--border);background:transparent;color:var(--muted);border-radius:999px;padding:.3rem .7rem;font:500 .78rem 'JetBrains Mono',monospace;cursor:pointer}
+.chip:hover{border-color:var(--primary);color:var(--primary)}
+.keyboard{display:grid;grid-template-columns:repeat(auto-fill,minmax(54px,1fr));gap:.45rem;background:var(--soft);padding:.8rem;border-radius:14px}
+.key{border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:10px;padding:.6rem .2rem;font:600 .9rem 'JetBrains Mono',monospace;cursor:pointer;transition:.15s}
+.key:hover{background:var(--primary);color:#fff;transform:translateY(-2px)}
+.key.op{color:var(--primary)}
+.key.act{background:#f5a623;color:#fff;border-color:transparent}
+.math{min-height:76px;display:flex;align-items:center;justify-content:center;padding:1rem;background:var(--soft);border-radius:14px;font-size:1.3rem;overflow-x:auto}
+.btn{width:100%;margin-top:1.2rem;padding:1rem;border:0;border-radius:14px;background:linear-gradient(135deg,var(--primary),#f08a2e);color:#fff;font:700 1.05rem 'Inter',sans-serif;cursor:pointer;box-shadow:0 8px 18px rgba(232,116,26,.32);transition:.2s}
+.btn:hover{transform:translateY(-2px);background:linear-gradient(135deg,var(--primary-d),var(--primary))}
+.err{display:none;margin-top:1.2rem;background:var(--err-bg);color:var(--err);padding:.9rem 1.1rem;border-radius:12px;border-left:5px solid var(--err);font-size:.92rem}
+#out{display:none;animation:in .35s ease}
+@keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.result{background:linear-gradient(135deg,rgba(232,116,26,.10),rgba(245,166,35,.08));border:1px solid var(--primary);font-size:1.5rem}
+.steps{display:flex;flex-direction:column;gap:.6rem}
+.step{display:flex;gap:.8rem;background:var(--soft);padding:.8rem 1rem;border-radius:12px;font-size:.93rem;line-height:1.55}
+.step b.n{flex:none;width:26px;height:26px;border-radius:50%;background:var(--primary);color:#fff;display:grid;place-items:center;font-size:.8rem}
+.badge{display:inline-block;margin-top:.5rem;font-size:.78rem;padding:.2rem .6rem;border-radius:999px;background:rgba(46,158,107,.15);color:var(--green);font-weight:600}
+#plot{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.legend{display:flex;gap:1rem;font-size:.8rem;color:var(--muted);margin-top:.5rem;flex-wrap:wrap}
+.legend i{display:inline-block;width:12px;height:3px;border-radius:2px;margin-right:.4rem;vertical-align:middle}
+#plot text{fill:var(--muted)}#plot .domain,#plot .tick line{stroke:var(--border)}#plot .grid .tick line{stroke:var(--border);opacity:.6}
+.hist{list-style:none;display:flex;flex-direction:column;gap:.55rem}
+.hist li{background:var(--soft);border:1px solid var(--border);border-radius:12px;padding:.7rem .85rem;cursor:pointer;font:500 .82rem 'JetBrains Mono',monospace;word-break:break-all;transition:.15s}
+.hist li:hover{border-color:var(--primary)}
+.hist li small{display:block;color:var(--muted);font:600 .68rem 'Inter',sans-serif;text-transform:uppercase;margin-bottom:.2rem}
+.hist .empty{cursor:default;text-align:center;color:var(--muted);font-family:'Inter',sans-serif;border-style:dashed}
+.clear{margin-top:.8rem;background:none;border:0;color:var(--muted);font-size:.8rem;cursor:pointer;text-decoration:underline}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><div class="logo">∫</div><div><h1>Calculadora de Cálculo</h1><div class="sub">Derivadas e integrales con procedimiento y gráfica</div></div></div>
+  <button class="icon-btn" id="theme" title="Cambiar tema">◐</button>
+</header>
+
+<div class="layout">
+<main class="card">
+  <h2>Operación</h2>
+  <div class="tabs" id="tabs">
+    <button class="tab active" data-m="der">Derivada</button>
+    <button class="tab" data-m="ind">Integral indefinida</button>
+    <button class="tab" data-m="def">Integral definida</button>
+  </div>
+
+  <h2>Función f(x)</h2>
+  <input type="text" id="expr" placeholder="Ej. x^2 + 2x - sin(x)" autocomplete="off" spellcheck="false">
+  <div class="limits" id="limits">
+    <div style="flex:1"><label for="a">Límite inferior (a)</label><input type="number" id="a" placeholder="0" step="any"></div>
+    <div style="flex:1"><label for="b">Límite superior (b)</label><input type="number" id="b" placeholder="3" step="any"></div>
+  </div>
+  <div class="chips" id="chips"></div>
+
+  <h2>Teclado</h2>
+  <div class="keyboard" id="kb"></div>
+
+  <h2>Vista previa</h2>
+  <div class="math" id="preview"></div>
+
+  <button class="btn" id="go">Calcular y graficar</button>
+  <div class="err" id="err"></div>
+
+  <div id="out">
+    <h2>Resultado</h2>
+    <div class="math result" id="res"></div>
+    <div id="verify"></div>
+    <h2>Procedimiento</h2>
+    <div class="steps" id="steps"></div>
+    <h2>Gráfica</h2>
+    <div id="plot"></div>
+    <div class="legend" id="legend"></div>
+  </div>
+</main>
+
+<aside class="card">
+  <h2>Historial</h2>
+  <ul class="hist" id="hist"></ul>
+  <button class="clear" id="clr">Borrar historial</button>
+</aside>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+let mode='der', history=[];
+const tex=(s,d=true)=>{try{return katex.renderToString(s,{output:'mathml',throwOnError:false,displayMode:d})}catch(e){return s}};
+const toTex=e=>{try{return math.parse(e).toTex()}catch(x){return e}};
+const num=v=>Math.abs(v)<1e-12?0:+v.toFixed(6);
+
+// Teclado
+const keys=['x','+','-','*','/','^','(',')','sqrt(','sin(','cos(','tan(','asin(','atan(','log(','exp(','abs(','pi','e'];
+keys.forEach(k=>{const d=document.createElement('button');d.className='key'+('+-*/^'.includes(k)&&k.length==1?' op':'');d.textContent=k;d.onclick=()=>insert(k);$('kb').appendChild(d)});
+[['⌫','del'],['AC','ac']].forEach(([t,id])=>{const d=document.createElement('button');d.className='key act';d.textContent=t;d.onclick=()=>{ if(id==='ac')$('expr').value='';else $('expr').value=$('expr').value.slice(0,-1);preview()};$('kb').appendChild(d)});
+function insert(v){const i=$('expr'),s=i.selectionStart??i.value.length,e=i.selectionEnd??s;i.value=i.value.slice(0,s)+v+i.value.slice(e);i.focus();i.setSelectionRange(s+v.length,s+v.length);preview()}
+
+// Ejemplos
+['x^2+3x','sin(x)*cos(x)','x*exp(x)','1/x','x^3-2x^2+1','sqrt(x)'].forEach(c=>{const b=document.createElement('button');b.className='chip';b.textContent=c;b.onclick=()=>{$('expr').value=c;preview()};$('chips').appendChild(b)});
+
+// Modos
+function setMode(m){mode=m;document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.m===m));$('limits').classList.toggle('show',m==='def');preview()}
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>setMode(t.dataset.m));
+
+function header(e,m,a,b){
+  const f=toTex(e);
+  if(m==='der')return `\\frac{d}{dx}\\left[${f}\\right]`;
+  if(m==='ind')return `\\int \\left(${f}\\right)\\,dx`;
+  return (a!==''&&b!=='')?`\\int_{${a}}^{${b}} \\left(${f}\\right)\\,dx`:`\\int_{a}^{b} \\left(${f}\\right)\\,dx`;
+}
+function preview(){$('preview').innerHTML=tex(header($('expr').value||'f(x)',mode,$('a').value,$('b').value))}
+['expr','a','b'].forEach(i=>$(i).addEventListener('input',preview));
+$('expr').addEventListener('keydown',e=>{if(e.key==='Enter')calc()});
+
+// Antiderivada simbólica (nerdamer)
+function antiderivative(e){
+  const r=nerdamer.integrate(nerdamer(e).toString(),'x');
+  const s=r.toString();
+  if(s.includes('integrate('))throw new Error('No encontré una antiderivada elemental para esta función. Prueba reescribirla (por ejemplo, expandiendo productos o simplificando).');
+  return {str:s,tex:r.toTeX()};
+}
+function simpson(f,a,b){const n=2000,h=(b-a)/n;let s=f(a)+f(b);for(let i=1;i<n;i++)s+=(i%2?4:2)*f(a+i*h);return h/3*s}
+
+function step(items){return items.map((t,i)=>`<div class="step"><b class="n">${i+1}</b><div>${t}</div></div>`).join('')}
+
+function calc(){
+  const e=$('expr').value.trim(),a=$('a').value,b=$('b').value;
+  $('err').style.display='none';$('out').style.display='none';$('verify').innerHTML='';
+  if(!e)return showErr('La expresión está vacía. Ingresa una función de x.');
+  try{
+    const f=math.compile(e); f.evaluate({x:1});
+    const F=toTex(e); let resTex,resStr,steps,plot=[],legend,verify='';
+    if(mode==='der'){
+      let d=math.derivative(e,'x'); try{d=math.simplify(d)}catch(_){}
+      resStr=d.toString(); resTex="f'(x)="+d.toTex();
+      steps=[`Función base: ${tex('f(x)='+F,false)}`,
+        `Aplicamos las reglas de derivación (potencia, cadena, producto o cociente) respecto a ${tex('x',false)}.`,
+        `Simplificamos: ${tex("f'(x)="+d.toTex(),false)}`];
+      plot=[{fn:e,color:'#e8741a'},{fn:resStr,color:'#2f7fd1'}];
+      legend=[['#e8741a','f(x)'],['#2f7fd1',"f'(x)"]];
+    }else if(mode==='ind'){
+      const r=antiderivative(e); const g=math.compile(r.str);
+      // verificación numérica: F'(x) ≈ f(x)
+      let ok=true;for(const x of [0.7,1.3,2.1]){const h=1e-5,dv=(g.evaluate({x:x+h})-g.evaluate({x:x-h}))/(2*h),fv=f.evaluate({x});if(isFinite(dv)&&isFinite(fv)&&Math.abs(dv-fv)>1e-3*(1+Math.abs(fv)))ok=false}
+      resStr=r.str+' + C'; resTex='\\int '+'\\left('+F+'\\right)dx='+r.tex+'+C';
+      steps=[`Planteamos la integral indefinida ${tex('\\int\\left('+F+'\\right)dx',false)}.`,
+        `Identificamos la estructura (potencias, trigonométricas, exponenciales, sustitución o por partes) y buscamos una antiderivada ${tex('F(x)',false)}.`,
+        `Obtenemos ${tex('F(x)='+r.tex,false)} y añadimos la constante de integración ${tex('C',false)}.`,
+        `Comprobación: ${tex("F'(x)=f(x)",false)} ${ok?'se cumple numéricamente ✓':'no pudo confirmarse en los puntos de prueba'}.`];
+      if(ok)verify='<span class="badge">✓ Verificado derivando el resultado</span>';
+      plot=[{fn:e,color:'#e8741a'},{fn:r.str,color:'#2e9e6b'}];
+      legend=[['#e8741a','f(x)'],['#2e9e6b','F(x) con C = 0']];
+    }else{
+      if(a===''||b==='')throw new Error('Para la integral definida ingresa los límites a y b.');
+      const A=parseFloat(a),B=parseFloat(b); let val,method;
+      try{const r=antiderivative(e),g=math.compile(r.str);val=g.evaluate({x:B})-g.evaluate({x:A});
+        if(!isFinite(val))throw 0;
+        method=[`Hallamos la antiderivada ${tex('F(x)='+r.tex,false)}.`,`Teorema Fundamental del Cálculo: ${tex('F('+B+')-F('+A+')',false)}.`];
+      }catch(_){val=simpson(x=>f.evaluate({x}),A,B);
+        method=[`No hay antiderivada elemental disponible; aplicamos la regla de Simpson compuesta (n = 2000).`,`Se estima el área neta bajo la curva entre ${tex('x='+A,false)} y ${tex('x='+B,false)}.`]}
+      if(!isFinite(val))throw new Error('La integral no converge en ese intervalo (hay una singularidad).');
+      resStr=String(num(val)); resTex=header(e,'def',a,b)+'='+num(val);
+      steps=[`Planteamos ${tex(header(e,'def',a,b),false)}.`,...method,`Resultado: ${tex(String(num(val)),false)}.`];
+      const pad=Math.max(1,Math.abs(B-A)*.25);
+      plot=[{fn:e,color:'#e8741a'},{fn:e,color:'#e8741a',range:[Math.min(A,B),Math.max(A,B)],closed:true}];
+      legend=[['#e8741a','f(x) y área bajo la curva']];
+      plot.xd=[Math.min(A,B)-pad,Math.max(A,B)+pad];
+    }
+    $('res').innerHTML=tex(resTex); $('steps').innerHTML=step(steps); $('verify').innerHTML=verify;
+    $('legend').innerHTML=legend.map(([c,t])=>`<span><i style="background:${c}"></i>${t}</span>`).join('');
+    $('out').style.display='block';
+    draw(plot);
+    save(mode,e,a,b,resStr);
+  }catch(err){showErr(err.message||'No se pudo interpretar la expresión.')}
+}
+function showErr(m){$('err').innerHTML='<strong>No se pudo procesar:</strong> '+m;$('err').style.display='block'}
+
+function draw(data){
+  const el=$('plot');el.innerHTML='';
+  try{
+    const o={target:'#plot',width:el.clientWidth||600,height:360,grid:true,data:data.map(d=>({graphType:'polyline',...d}))};
+    if(data.xd)o.xAxis={domain:data.xd};
+    functionPlot(o);
+  }catch(e){el.innerHTML="<p style='padding:1.5rem;text-align:center;color:var(--muted)'>No se pudo graficar esta función en el rango por defecto.</p>"}
+}
+
+// Historial
+const LBL={der:'Derivada',ind:'Integral indefinida',def:'Integral definida'};
+try{history=JSON.parse(localStorage.getItem('calc-hist')||'[]')}catch(e){history=[]}
+function save(m,e,a,b,r){
+  history=[{m,e,a,b,r},...history.filter(h=>!(h.m===m&&h.e===e&&h.a===a&&h.b===b))].slice(0,8);
+  try{localStorage.setItem('calc-hist',JSON.stringify(history))}catch(_){}
+  renderHist();
+}
+function renderHist(){
+  const ul=$('hist');ul.innerHTML='';
+  if(!history.length){ul.innerHTML='<li class="empty">Tus operaciones aparecerán aquí.</li>';return}
+  history.forEach(h=>{const li=document.createElement('li');
+    const s=h.m==='der'?'d/dx':h.m==='ind'?'∫':`∫[${h.a},${h.b}]`;
+    li.innerHTML=`<small>${LBL[h.m]}</small>`;li.append(`${s} ${h.e} = ${h.r}`);
+    li.onclick=()=>{$('expr').value=h.e;$('a').value=h.a;$('b').value=h.b;setMode(h.m)};ul.appendChild(li)});
+}
+$('clr').onclick=()=>{history=[];try{localStorage.removeItem('calc-hist')}catch(_){}renderHist()};
+$('theme').onclick=()=>{const r=document.documentElement;const dark=r.dataset.theme?r.dataset.theme==='dark':matchMedia('(prefers-color-scheme:dark)').matches;r.dataset.theme=dark?'light':'dark'};
+$('go').onclick=calc;
+renderHist();preview();
+</script>
+</body>
+</html>
